@@ -55,13 +55,14 @@ def main(TEST_MODE = True):
             y_trains[i] = y_trains[i].squeeze()
             pipeline.fit(X_trains[i], y_trains[i])
         models.append(pipeline)
+        
     y_predicts=[]
     for i in range(len(dataset_names)):
         y_predict_proba=models[i].predict_proba(X_tests[i])[:, 1]
         df = pd.DataFrame(y_predict_proba, columns=['y_predict_proba'])
         y_predicts.append(df)
 
-    file_handler.save_auc_result(aucs, "RF")
+    if TEST_MODE: file_handler.save_auc_result(aucs, "RF")
     file_handler.save_predict(y_predicts, dataset_names)
 
 if __name__ == "__main__":
