@@ -16,9 +16,9 @@ except: from utils import file_handler, data_preprocess
 
 
 def main(TEST_MODE = True):
-    
-    dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
+    RANDOM_SEED = 42
 
+    dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
     dataset_datatype_cnt = []
     for i, _ in enumerate(dataset_names):
         numeric_features, categoric_features = data_preprocess.get_number_of_datatype(X_data=X_trains[i])
@@ -45,10 +45,10 @@ def main(TEST_MODE = True):
             ]
         )
 
-        model = RandomForestClassifier(random_state = 42)
+        model = RandomForestClassifier(random_state = RANDOM_SEED)
         pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("classifier", model)])
 
-        skf = StratifiedKFold(n_splits = 5, shuffle = True, random_state=42)
+        skf = StratifiedKFold(n_splits = 5, shuffle = True, random_state=RANDOM_SEED)
         fold_aucs = []
 
         for train_index, test_index in skf.split(X_trains[i], y_trains[i]):
