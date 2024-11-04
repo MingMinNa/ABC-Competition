@@ -14,7 +14,8 @@ from sklearn.pipeline import Pipeline
 try:    from .utils import file_handler, data_preprocess
 except: from utils import file_handler, data_preprocess
 
-
+RANDOM_SEED = 42
+# 0.713388
 def main(TEST_MODE = True):
     RANDOM_SEED = 42
 
@@ -55,7 +56,7 @@ def main(TEST_MODE = True):
             tmp_X_train, tmp_X_test = X_trains[i].iloc[train_index], X_trains[i].iloc[test_index]
             tmp_y_train, tmp_y_test = y_trains[i].iloc[train_index].squeeze(), y_trains[i].iloc[test_index].squeeze()
             
-            grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring = "roc_auc", n_jobs=-1)
+            grid_search = GridSearchCV(pipeline, param_grid, cv = 3, scoring = "roc_auc", n_jobs=-1)
             grid_search.fit(tmp_X_train, tmp_y_train)
             
             best_model = grid_search.best_estimator_

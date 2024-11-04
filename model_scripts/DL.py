@@ -30,60 +30,8 @@ class SimpleNN(nn.Module):
         x = torch.sigmoid(self.fc3(x))         
         return x
 
-def test_single_dataset(dataset_idx):
-    dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
-    dataset_name = dataset_names[dataset_idx]
-    X_train = X_trains[dataset_idx]
-    y_train = y_trains[dataset_idx]
-    X_test = X_tests[dataset_idx]
-    del dataset_names, X_trains, y_trains, X_tests
-
-    numeric_features, categoric_features = data_preprocess.get_number_of_datatype(X_train)
-    X_train = data_preprocess.preprocess_features(X_train, numeric_features, categoric_features)
-    X_test = data_preprocess.preprocess_features(X_test, numeric_features, categoric_features)
-    X_train, X_test = data_preprocess.align_columns(X_train, X_test)
-
-    # 使用 StratifiedKFold 進行交叉驗證
-    skf = StratifiedKFold(n_splits = 5, shuffle = True, random_state = 42)
-    aucs = []
-
-    for train_index, val_index in skf.split(X_train, y_train):
-        tmp_X_train, tmp_X_val = X_train.iloc[train_index], X_train.iloc[val_index]
-        tmp_y_train, tmp_y_val = y_train.iloc[train_index], y_train.iloc[val_index]
-        
-        # 建立 DataLoader
-        train_tensor = TensorDataset(torch.FloatTensor(tmp_X_train.values), torch.FloatTensor(tmp_y_train.values))
-        train_loader = DataLoader(train_tensor, batch_size=32, shuffle=True)
-
-        input_size = tmp_X_train.shape[1]
-        torch.manual_seed(42)
-        model = SimpleNN(input_size)
-
-        criterion = nn.BCELoss()
-        optimizer = optim.Adam(model.parameters(), lr = 0.001)
-
-        # 訓練模型
-        for epoch in tqdm(range(50)):
-            model.train()
-            for inputs, labels in train_loader:
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs.squeeze(), labels.squeeze())
-                loss.backward()
-                optimizer.step()
-
-        # 驗證模型
-        model.eval()
-        with torch.no_grad():
-            tmp_y_prob = model(torch.FloatTensor(tmp_X_val.values)).numpy()
-        auc = roc_auc_score(tmp_y_val, tmp_y_prob)
-        aucs.append(auc)
-
-    plt.plot(aucs)
-    plt.show()
-    return
-
 def main(TEST_MODE = True):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     # get dataset
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()

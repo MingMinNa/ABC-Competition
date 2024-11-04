@@ -12,7 +12,7 @@ from scipy.stats import randint, uniform
 try:    from .utils import file_handler, data_preprocess
 except: from utils import file_handler, data_preprocess
 
-
+# 0.803074
 def main(TEST_MODE = True):
     RANDOM_SEED = 42
     # 讀取資料集
@@ -38,13 +38,14 @@ def main(TEST_MODE = True):
         else:
             tmp_X_train, tmp_X_test, tmp_y_train, tmp_y_test = X_trains[i], X_trains[i], y_trains[i], y_trains[i]
 
-        # 定義超參數分佈
         params = {
-            'objective': 'binary',  # 二元分類
-            'metric': 'auc',        # 使用 AUC 作為評估指標
-            'boosting_type': 'gbdt', # 傳統的梯度提升決策樹
-            'learning_rate': 0.01,
-            'num_leaves': 31,
+            'objective': 'binary',
+            'metric': 'auc',
+            'boosting_type': 'gbdt',
+            'learning_rate': 0.01,   # 降低學習率
+            'num_leaves': 30,         # 降低 num_leaves 以減少模型複雜度
+            'lambda_l1': 1,           # 增加 L1 正則化
+            'lambda_l2': 1,           # 增加 L2 正則化
             'random_state': RANDOM_SEED,
             'verbose': -1
         }
@@ -68,7 +69,7 @@ def main(TEST_MODE = True):
 
     y_predicts = []
     for i in range(len(dataset_names)):
-        y_pred_proba = model.predict(tmp_X_test, num_iteration=model.best_iteration)
+        y_pred_proba = models[i].predict(X_tests[i], num_iteration = models[i].best_iteration)
         df = pd.DataFrame(y_pred_proba, columns=["y_predict_proba"])
         y_predicts.append(df)
 
@@ -77,4 +78,4 @@ def main(TEST_MODE = True):
     return 
 
 if __name__ == "__main__":
-    main(TEST_MODE = False)
+    main(TEST_MODE = True)

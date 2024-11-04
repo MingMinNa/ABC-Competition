@@ -6,11 +6,10 @@ from sklearn.model_selection import train_test_split
 from scipy.stats import randint, uniform
 import pandas as pd
 
-try:
-    from .utils import file_handler, data_preprocess
-except:
-    from utils import file_handler, data_preprocess
+try:    from .utils import file_handler, data_preprocess
+except: from utils import file_handler, data_preprocess
 
+# 0.814357
 def main(TEST_MODE = True):
     # get dataset
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()

@@ -29,8 +29,8 @@ def load_dataset():
     return dataset_names, X_trains, y_trains, X_tests
 
 def save_predict(y_predicts, dataset_names):
-    for idx,dataset_name in enumerate(dataset_names):
-        predict_path = os.path.join(const.DATA_FOLDER, dataset_name, "y_predict.csv")
+    for idx in range(len(y_predicts)):
+        predict_path = os.path.join(const.DATA_FOLDER, dataset_names[idx], "y_predict.csv")
         df = y_predicts[idx]
         df.to_csv(predict_path, index = False,header = True)
     return
