@@ -80,25 +80,27 @@ def main():
 
         # Define parameter distributions for RandomizedSearchCV
         param_distributions = {
-            "n_estimators": randint(50, 300),
-            "max_depth": randint(3, 10),
-            "learning_rate": uniform(0.01, 0.3),
+            "n_estimators": randint(100, 500),
+            "max_depth": randint(3, 15),
+            "learning_rate": uniform(0.01, 0.2),
             "subsample": uniform(0.6, 0.4),
             "colsample_bytree": uniform(0.6, 0.4),
+            "gamma": uniform(0, 5),
+            "min_child_weight": randint(1, 10),
         }
 
         # Perform RandomizedSearchCV to find the best
         rand_search = RandomizedSearchCV(
             xgb,
             param_distributions,
-            n_iter=20,
+            n_iter=50,
             scoring="roc_auc",
-            cv=StratifiedKFold(n_splits=3),
+            cv=StratifiedKFold(n_splits=5),
             verbose=1,
             n_jobs=-1,
             random_state=42,
         )
-        
+
         rand_search.fit(tmp_X_train_processed, tmp_y_train.values.ravel())
 
         # Best model
@@ -115,7 +117,7 @@ def main():
 
         # Save the predictions
         df = pd.DataFrame(y_pred_proba, columns=["y_predict_proba"])
-        df.to_csv(f"{base_path}/{dataset_names[i]}/y_predict_XGBoost.csv", index=False, header=True)
+        df.to_csv(f"{base_path}/{dataset_names[i]}/y_predict.csv", index=False, header=True)
         print(f"{dataset_names[i]} saved.\n")
 
     # Display AUC results
