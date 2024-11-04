@@ -30,6 +30,7 @@ class SimpleNN(nn.Module):
         x = torch.sigmoid(self.fc3(x))         
         return x
 
+# 0.840799
 def main(TEST_MODE = True):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 

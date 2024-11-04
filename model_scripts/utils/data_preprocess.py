@@ -39,8 +39,8 @@ def align_columns(X_train, X_test):
         X_train[col] = 0
     for col in test_missing_cols:
         X_test[col] = 0  
-    X_train = X_train[all_cols]
-    X_test = X_test[all_cols]
+    X_train = X_train[all_cols].copy()
+    X_test = X_test[all_cols].copy()
     
     return X_train, X_test
 

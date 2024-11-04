@@ -35,7 +35,7 @@ def main(TEST_MODE = True):
             tmp_X_train, tmp_y_train = X_trains[i], y_trains[i]
 
         # Define XGBoost model with specified parameters
-        xgb_model = XGBClassifier(random_state=42, eval_metric="logloss", tree_method="hist", early_stopping_rounds=10)
+        xgb_model = XGBClassifier(random_state = 42, eval_metric = "logloss", tree_method = "hist", early_stopping_rounds = 10)
 
         # Define parameter distributions for RandomizedSearchCV
         param_distributions = {

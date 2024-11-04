@@ -8,14 +8,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.model_selection import GridSearchCV
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+
 try:    from .utils import file_handler, data_preprocess
 except: from utils import file_handler, data_preprocess
 
 RANDOM_SEED = 42
-# 0.713388
+
+# 0.725659
 def main(TEST_MODE = True):
     RANDOM_SEED = 42
 
@@ -49,25 +51,10 @@ def main(TEST_MODE = True):
         model = RandomForestClassifier(random_state = RANDOM_SEED)
         pipeline = Pipeline(steps=[("preprocessor", preprocessor), ("classifier", model)])
 
-        skf = StratifiedKFold(n_splits = 5, shuffle = True, random_state=RANDOM_SEED)
-        fold_aucs = []
-
-        for train_index, test_index in skf.split(X_trains[i], y_trains[i]):
-            tmp_X_train, tmp_X_test = X_trains[i].iloc[train_index], X_trains[i].iloc[test_index]
-            tmp_y_train, tmp_y_test = y_trains[i].iloc[train_index].squeeze(), y_trains[i].iloc[test_index].squeeze()
-            
-            grid_search = GridSearchCV(pipeline, param_grid, cv = 3, scoring = "roc_auc", n_jobs=-1)
-            grid_search.fit(tmp_X_train, tmp_y_train)
-            
-            best_model = grid_search.best_estimator_
-            tmp_y_prob = best_model.predict_proba(tmp_X_test)[:, 1]
-            auc = roc_auc_score(tmp_y_test, tmp_y_prob)
-            fold_aucs.append(auc)
+        grid_search = GridSearchCV(pipeline, param_grid, cv = 3, scoring = "roc_auc", n_jobs=-1)
+        grid_search.fit(X_trains[i], y_trains[i].squeeze())
         
-        
-        best_aucs.append(np.mean(fold_aucs))
-        # train at the all training dataset again
-        best_model.fit(X_trains[i], y_trains[i].squeeze())
+        best_model = grid_search.best_estimator_
         models.append(best_model)
 
     y_predicts = []
