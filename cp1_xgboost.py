@@ -76,17 +76,23 @@ def main():
         X_train_processed, X_test_processed = preprocess_data(X_train, X_test)
 
         # Define the model
-        xgb = XGBClassifier(eval_metric="logloss", random_state=42)
+        xgb = XGBClassifier(
+            eval_metric="auc",
+            random_state=42,
+        )
+
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
         # Define parameter distributions for RandomizedSearchCV
         param_distributions = {
-            "n_estimators": randint(100, 500),
-            "max_depth": randint(3, 15),
-            "learning_rate": uniform(0.01, 0.2),
+            "n_estimators": randint(50, 300),
+            "max_depth": randint(3, 10),
+            "learning_rate": uniform(0.01, 0.3),
             "subsample": uniform(0.6, 0.4),
             "colsample_bytree": uniform(0.6, 0.4),
             "gamma": uniform(0, 5),
-            "min_child_weight": randint(1, 10),
+            "reg_alpha": uniform(0, 1),
+            "reg_lambda": uniform(1, 2),
         }
 
         # Perform RandomizedSearchCV to find the best
@@ -95,13 +101,16 @@ def main():
             param_distributions,
             n_iter=50,
             scoring="roc_auc",
-            cv=StratifiedKFold(n_splits=5),
+            cv=skf,
             verbose=1,
             n_jobs=-1,
             random_state=42,
         )
 
-        rand_search.fit(tmp_X_train_processed, tmp_y_train.values.ravel())
+        rand_search.fit(
+            tmp_X_train_processed,
+            tmp_y_train.values.ravel(),
+        )
 
         # Best model
         best_model = rand_search.best_estimator_
