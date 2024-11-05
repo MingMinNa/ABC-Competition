@@ -225,20 +225,19 @@ def merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED = 42):
     file_handler.save_predict(y_predicts, dataset_names)
 
 
-# 0.849622
+# with preprocess of numeric and categoric features: 0.849622
+# without all preprocess: 0.858449
+# without preprocess of categoric features: 0.855381
 if __name__ == '__main__':
     
     RANDOM_SEED = 42
-    use_csv = True
     # get dataset
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
     
     # preprocess
     for i, _ in enumerate(dataset_names):
         X_train, X_test, Y_train = X_trains[i], X_tests[i], y_trains[i]
-
         numeric_features, categoric_features = data_preprocess.get_number_of_datatype(X_train)
-
         X_train = data_preprocess.preprocess_features(X_train, numeric_features, categoric_features)
         X_test = data_preprocess.preprocess_features(X_test, numeric_features, categoric_features)
         X_trains[i], X_tests[i] = data_preprocess.align_columns(X_train, X_test)
