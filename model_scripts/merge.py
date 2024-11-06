@@ -96,7 +96,7 @@ def LightGBM(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
         tmp_X_train, tmp_X_test, tmp_y_train, tmp_y_test = train_test_split(
             X_train, y_train, test_size = 0.2, random_state = RANDOM_SEED)
     else:
-        tmp_X_train, tmp_X_test, tmp_y_train, tmp_y_test = X_train, X_train, y_train, y_trains[i]
+        tmp_X_train, tmp_X_test, tmp_y_train, tmp_y_test = X_train, X_train, y_train, y_train
 
     params = {
         'objective': 'binary',
@@ -127,8 +127,13 @@ def LightGBM(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
 
 def catBoost(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
 
-    # 初始化 CatBoost 模型
-    model = CatBoostClassifier(eval_metric="AUC", random_seed = RANDOM_SEED, verbose=0, iterations=100)
+    numeric_features, _ = data_preprocess.get_number_of_datatype(X_data = X_train)
+
+    # Too slow and the result is not better
+    # model = CatBoostClassifier(eval_metric = "AUC", random_seed = RANDOM_SEED, verbose=0, iterations=100,
+    #                             cat_features = list(range(len(numeric_features), X_train.shape[1])))
+
+    model = CatBoostClassifier(eval_metric = "AUC", random_seed = RANDOM_SEED, verbose=0, iterations=100)
 
     # Define parameter distributions for RandomizedSearchCV
     param_distributions = {
@@ -156,11 +161,8 @@ def catBoost(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
         y_train,
         early_stopping_rounds = 50,
     )
-
-    # 輸出最佳參數和最佳分數
     print(f'最佳參數: {rand_search.best_params_}')
     print(f'最佳交叉驗證分數: {rand_search.best_score_:.4f}')
-    # print(rand_search.best_estimator_.predict_proba(X_train)[:, 1])
     return rand_search.best_estimator_
 
 def simple_DL(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
@@ -209,6 +211,7 @@ def simple_DL(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
             loss = criterion(outputs.squeeze(), labels.squeeze())
             loss.backward()
             optimizer.step()
+
     return model
 
 def merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED = 42):
@@ -281,27 +284,29 @@ def merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED = 42):
         # del simpleDL_model, XGB_model
     file_handler.save_predict(y_predicts, dataset_names)
 
-
-# with preprocess of numeric and categoric features: 0.854
-# without all preprocess: 0.872
-# without preprocess of categoric features: 0.861
+# with preprocess of numeric and categoric features: 0.858455
+# without all preprocess: 0.872581
+# without preprocess of categoric features: 0.867
 if __name__ == '__main__':
     
     RANDOM_SEED = 42
     # get dataset
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
+    # dataset_names = dataset_names[:5]
 
     # preprocess
-
     # no preprocessing has the better result (?)
-    # for i, _ in enumerate(dataset_names):
-    #     X_train, X_test, Y_train = X_trains[i], X_tests[i], y_trains[i]
-    #     numeric_features, categoric_features = data_preprocess.get_number_of_datatype(X_train)
-    #     X_train = data_preprocess.preprocess_features(X_train, numeric_features, categoric_features)
-    #     X_test = data_preprocess.preprocess_features(X_test, numeric_features, categoric_features)
-    #     X_trains[i], X_tests[i] = data_preprocess.align_columns(X_train, X_test)
-    #     y_trains[i] = Y_train
-
+    '''
+    for i, _ in enumerate(dataset_names):
+        X_train, X_test, Y_train = X_trains[i], X_tests[i], y_trains[i]
+        numeric_features, categoric_features = data_preprocess.get_number_of_datatype(X_train)
+        X_train = data_preprocess.preprocess_features(X_train, numeric_features, categoric_features)
+        X_test = data_preprocess.preprocess_features(X_test, numeric_features, categoric_features)
+        X_trains[i], X_tests[i] = X_train, X_test
+        # X_trains[i], X_tests[i] = data_preprocess.align_columns(X_train, X_test)
+        y_trains[i] = Y_train
+    '''
+    
     merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED)
     quit()
 
