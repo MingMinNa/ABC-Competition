@@ -7,8 +7,9 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV, train_test_split
+from sklearn.metrics import roc_auc_score, accuracy_score
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV, train_test_split, GridSearchCV
 from tqdm import tqdm
 from xgboost import XGBClassifier
 from scipy.stats import randint, uniform
@@ -41,14 +42,13 @@ class SimpleNN(nn.Module):
 class MergeNN(nn.Module):
     def __init__(self, *args, **kwargs):
         super(MergeNN, self).__init__()
-        self.fc1 = nn.Linear(4, 64)            
+        self.fc1 = nn.Linear(5, 64)            
         self.fc2 = nn.Linear(64, 1)  
         
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = torch.sigmoid(self.fc2(x))         
         return x
-
 
 def XGBoost(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
 
@@ -161,8 +161,8 @@ def catBoost(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
         y_train,
         early_stopping_rounds = 50,
     )
-    print(f'最佳參數: {rand_search.best_params_}')
-    print(f'最佳交叉驗證分數: {rand_search.best_score_:.4f}')
+    print(f'[catBoost]最佳參數: {rand_search.best_params_}')
+    print(f'[catBoost]最佳交叉驗證分數: {rand_search.best_score_:.4f}')
     return rand_search.best_estimator_
 
 def simple_DL(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
@@ -171,30 +171,31 @@ def simple_DL(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
     
     X = X_train
     y = y_train
-        
-    # skf = StratifiedKFold(n_splits = 5, shuffle = True, random_state = RANDOM_SEED)
+    '''
+    skf = StratifiedKFold(n_splits = 5, shuffle = True, random_state = RANDOM_SEED)
 
-    # for train_index, test_index in skf.split(X, y):
-    #     tmp_X_train, tmp_X_test = X.iloc[train_index], X.iloc[test_index]
-    #     tmp_y_train, tmp_y_test = y.iloc[train_index], y.iloc[test_index]
-    #     train_tensor = TensorDataset(torch.FloatTensor(tmp_X_train.values), torch.FloatTensor(tmp_y_train.values))
-    #     train_loader = DataLoader(train_tensor, batch_size = 32, shuffle = True)
+    for train_index, test_index in skf.split(X, y):
+        tmp_X_train, tmp_X_test = X.iloc[train_index], X.iloc[test_index]
+        tmp_y_train, tmp_y_test = y.iloc[train_index], y.iloc[test_index]
+        train_tensor = TensorDataset(torch.FloatTensor(tmp_X_train.values), torch.FloatTensor(tmp_y_train.values))
+        train_loader = DataLoader(train_tensor, batch_size = 32, shuffle = True)
         
-    #     input_size = X.shape[1]
-    #     model = SimpleNN(input_size)
+        input_size = X.shape[1]
+        model = SimpleNN(input_size)
         
-    #     criterion = nn.BCELoss()
-    #     optimizer = optim.Adam(model.parameters(), lr = 0.001)
+        criterion = nn.BCELoss()
+        optimizer = optim.Adam(model.parameters(), lr = 0.001)
         
-    #     # Train the model
-    #     model.train()
-    #     for epoch in range(50):  # You can adjust this based on your dataset
-    #         for inputs, labels in train_loader:
-    #             optimizer.zero_grad()
-    #             outputs = model(inputs)
-    #             loss = criterion(outputs.squeeze(), labels.squeeze())
-    #             loss.backward()
-    #             optimizer.step()
+        # Train the model
+        model.train()
+        for epoch in range(50):  # You can adjust this based on your dataset
+            for inputs, labels in train_loader:
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs.squeeze(), labels.squeeze())
+                loss.backward()
+                optimizer.step()
+    '''
     
     input_size = X.shape[1]
     model = SimpleNN(input_size)
@@ -214,6 +215,22 @@ def simple_DL(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
 
     return model
 
+def gaussian_NB(X_train, y_train, TEST_MODE = True, RANDOM_SEED = 42):
+    '''
+    with this, score 0.872581 -> score 0.871572
+    '''
+    model = GaussianNB()
+    param_grid = {'var_smoothing': [1e-9, 1e-8, 1e-7, 1e-6, 1e-5]}
+
+    grid_search = GridSearchCV(estimator = model, param_grid = param_grid, scoring = 'accuracy', cv = 3)
+    grid_search.fit(X_train, y_train.to_numpy().ravel())
+    # y_pred = grid_search.best_estimator_.predict_proba(X_train)[:, 1]
+
+    print("[Gaussian_NB]最佳 var_smoothing:", grid_search.best_params_)
+    print("[Gaussian_NB]最佳交叉驗證分數:", grid_search.best_score_)
+
+    return grid_search.best_estimator_
+
 def merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED = 42):
     
     torch.manual_seed(RANDOM_SEED)
@@ -224,7 +241,8 @@ def merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED = 42):
         XGB_model = XGBoost(X_train = X_trains[i], y_train = y_trains[i], TEST_MODE = False, RANDOM_SEED = RANDOM_SEED)
         LightGBM_model = LightGBM(X_train = X_trains[i], y_train = y_trains[i], TEST_MODE = False, RANDOM_SEED = RANDOM_SEED)
         catBoost_model = catBoost(X_train = X_trains[i], y_train = y_trains[i], TEST_MODE = False, RANDOM_SEED = RANDOM_SEED)
-        
+        # gaussianNB_model = gaussian_NB(X_train = X_trains[i], y_train = y_trains[i], TEST_MODE = False, RANDOM_SEED = RANDOM_SEED)
+
         tmp_X_train, tmp_X_test, tmp_y_train, tmp_y_test = train_test_split(X_trains[i], y_trains[i], train_size = 0.8, random_state = RANDOM_SEED)
         simpleDL_model.eval()
         with torch.no_grad():
@@ -233,12 +251,15 @@ def merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED = 42):
         XGB_y_prob = XGB_model.predict_proba(tmp_X_train)[:, 1]
         LightGBM_y_prob = LightGBM_model.predict(tmp_X_train, num_iteration = LightGBM_model.best_iteration)
         catBoost_y_prob = catBoost_model.predict_proba(tmp_X_train)[:, 1]
+        # NB_y_prob = gaussianNB_model.predict_proba(tmp_X_train)[:, 1]
 
         train_tensor = TensorDataset(torch.FloatTensor(pd.DataFrame({
             'DL': simple_DL_y_prob[:, 0], 
             'XGB': XGB_y_prob, 
             'LightGBM': LightGBM_y_prob,
-            'catBoost': catBoost_y_prob}).values), torch.FloatTensor(tmp_y_train.values))
+            'catBoost': catBoost_y_prob,
+            # 'NB':NB_y_prob
+            }).values), torch.FloatTensor(tmp_y_train.values))
         train_loader = DataLoader(train_tensor, batch_size = 32, shuffle = True)
 
         merge_model = MergeNN()
@@ -259,11 +280,15 @@ def merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED = 42):
             XGB_y_prob = XGB_model.predict_proba(tmp_X_test)[:, 1]
             LightGBM_y_prob = LightGBM_model.predict(tmp_X_test, num_iteration = LightGBM_model.best_iteration)
             catBoost_y_prob = catBoost_model.predict_proba(tmp_X_test)[:, 1]
+            # NB_y_prob = gaussianNB_model.predict_proba(tmp_X_test)[:, 1]
+
             tmp_y_prob = merge_model(torch.FloatTensor(pd.DataFrame({
                                     'DL': simple_DL_y_prob[:, 0], 
                                     'XGB': XGB_y_prob,
                                     'LightGBM': LightGBM_y_prob,
-                                    'catBoost': catBoost_y_prob}).values)).numpy()
+                                    'catBoost': catBoost_y_prob,
+                                    # 'NB':NB_y_prob
+                                    }).values)).numpy()
             auc = roc_auc_score(tmp_y_test, tmp_y_prob)
             print(f"{i} {auc}")
 
@@ -271,11 +296,15 @@ def merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED = 42):
             XGB_y_prob = XGB_model.predict_proba(X_tests[i])[:, 1]
             LightGBM_y_prob = LightGBM_model.predict(X_tests[i], num_iteration = LightGBM_model.best_iteration)
             catBoost_y_prob = catBoost_model.predict_proba(X_tests[i])[:, 1]
+            # NB_y_prob = gaussianNB_model.predict_proba(X_tests[i])[:, 1]
+
             y_predict_proba = merge_model(torch.FloatTensor(pd.DataFrame({
                                          'DL': simple_DL_y_prob[:, 0], 
                                          'XGB': XGB_y_prob,
                                          'LightGBM': LightGBM_y_prob,
-                                         'catBoost': catBoost_y_prob}).values)).numpy()
+                                         'catBoost': catBoost_y_prob,
+                                        #  'NB':NB_y_prob
+                                         }).values)).numpy()
         df = pd.DataFrame(y_predict_proba, columns=["y_predict_proba"])
         y_predicts.append(df)
 
@@ -292,7 +321,6 @@ if __name__ == '__main__':
     RANDOM_SEED = 42
     # get dataset
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
-    # dataset_names = dataset_names[:5]
 
     # preprocess
     # no preprocessing has the better result (?)
@@ -306,7 +334,7 @@ if __name__ == '__main__':
         # X_trains[i], X_tests[i] = data_preprocess.align_columns(X_train, X_test)
         y_trains[i] = Y_train
     '''
-    
+
     merge_DL(dataset_names, X_trains, y_trains, X_tests, RANDOM_SEED)
     quit()
 
