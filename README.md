@@ -21,6 +21,9 @@ A general model for Binary Classification (ABC)
    > 競賽期間：只會比較資料集中 ```public data```，從而得出分數並顯示。  
    > 競賽結束：會比較全部資料，從而得出分數並顯示。
 
+   > **[Public vs. Private leaderboards]**  
+   > Public leaderboard is based on random 1/2 test data you are submitting while the private leaderboard is based on the remaining 1/2 test data. What you see during the competition is the public leaderboard.  
+   > The private leaderboard remains secret until the end of the competition. It will determine the final competition ranking!
 
 其餘細節請看 ```DS_CP1_intro.pdf```
 
