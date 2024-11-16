@@ -53,18 +53,22 @@ def preprocess_features(X_data, numeric_features, categoric_features):
 
 def preprocess_data(dataset_names, X_trains, y_trains, X_tests):
     
+    copy_X_trains, copy_X_tests, copy_Y_trains = [], [], []
     # preprocess
     for i, _ in enumerate(dataset_names):
-        X_train, X_test, Y_train = X_trains[i], X_tests[i], y_trains[i]
+        X_train, X_test, Y_train = X_trains[i].copy(deep = True), X_tests[i].copy(deep = True), y_trains[i].copy(deep = True)
 
         numeric_features, categoric_features = get_number_of_datatype(X_train)
 
         X_train = preprocess_features(X_train, numeric_features, categoric_features)
         X_test = preprocess_features(X_test, numeric_features, categoric_features)
-        X_trains[i], X_tests[i] = align_columns(X_train, X_test)
-        y_trains[i] = Y_train
+        X_train, X_test = align_columns(X_train, X_test)
 
-    return X_trains, y_trains, X_tests
+        copy_X_trains.append(X_train)
+        copy_X_tests.append(X_test)
+        copy_Y_trains.append(Y_train)
+
+    return copy_X_trains, copy_Y_trains, copy_X_tests
 
 if __name__ == "__main__":
     pass
