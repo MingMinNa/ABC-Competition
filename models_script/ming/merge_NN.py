@@ -18,9 +18,9 @@ except:
 
 
 class MergeNN(nn.Module):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, input_size):
         super(MergeNN, self).__init__()
-        self.fc1 = nn.Linear(8, 64)            
+        self.fc1 = nn.Linear(input_size, 64)            
         self.fc2 = nn.Linear(64, 1)  
         
     def forward(self, x):
@@ -33,7 +33,7 @@ def main(RANDOM_SEED = 42):
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
 
     # preprocess. But no preprocessing has the better result (?)
-    preprocess_X_trains, preprocess_y_trains, preprocess_X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests)
+    # preprocess_X_trains, preprocess_y_trains, preprocess_X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests)
 
     torch.manual_seed(RANDOM_SEED)
 
@@ -41,6 +41,7 @@ def main(RANDOM_SEED = 42):
     for i in tqdm(range(len(dataset_names))):
 
         # models with preprocessed data
+        '''
         preprocess_simpleNN_model = simple_NN.build_model(X_train = preprocess_X_trains[i], y_train = preprocess_y_trains[i], RANDOM_SEED = RANDOM_SEED)
         preprocess_XGB_model = XGBoost.build_model(X_train = preprocess_X_trains[i], y_train = preprocess_y_trains[i], RANDOM_SEED = RANDOM_SEED)
         preprocess_LightGBM_model = lightGBM.build_model(X_train = preprocess_X_trains[i], y_train = preprocess_y_trains[i], RANDOM_SEED = RANDOM_SEED)
@@ -56,6 +57,7 @@ def main(RANDOM_SEED = 42):
         preprocess_XGB_prob = preprocess_XGB_model.predict_proba(preprocess_tmp_X_train)[:, 1]
         preprocess_LightGBM_prob = preprocess_LightGBM_model.predict(preprocess_tmp_X_train, num_iteration = preprocess_LightGBM_model.best_iteration)
         preprocess_catBoost_prob = preprocess_catBoost_model.predict_proba(preprocess_tmp_X_train)[:, 1]
+        '''
 
 
         # models with raw data
@@ -80,14 +82,14 @@ def main(RANDOM_SEED = 42):
             'XGB': XGB_y_prob, 
             'LightGBM': LightGBM_y_prob,
             'catBoost': catBoost_y_prob,
-            'preprocess_NN': preprocess_simpleNN_prob[:, 0],
-            'preprocess_XGB':preprocess_XGB_prob,
-            'preprocess_LightGBM':preprocess_LightGBM_prob,
-            'preprocess_catBoost':preprocess_catBoost_prob
+            # 'preprocess_NN': preprocess_simpleNN_prob[:, 0],
+            # 'preprocess_XGB':preprocess_XGB_prob,
+            # 'preprocess_LightGBM':preprocess_LightGBM_prob,
+            # 'preprocess_catBoost':preprocess_catBoost_prob
             }).values), torch.FloatTensor(tmp_y_train.values))
         train_loader = DataLoader(train_tensor, batch_size = 32, shuffle = True)
 
-        merge_model = MergeNN()
+        merge_model = MergeNN(4)
         criterion = nn.BCELoss()
         optimizer = optim.Adam(merge_model.parameters(), lr = 0.001)
 
@@ -102,10 +104,10 @@ def main(RANDOM_SEED = 42):
         merge_model.eval()
         simpleNN_model.eval()
         with torch.no_grad():
-            preprocess_simpleNN_prob = preprocess_simpleNN_model(torch.FloatTensor(preprocess_tmp_X_test.values)).numpy()
-            preprocess_XGB_prob = preprocess_XGB_model.predict_proba(preprocess_tmp_X_test)[:, 1]
-            preprocess_LightGBM_prob = preprocess_LightGBM_model.predict(preprocess_tmp_X_test, num_iteration = preprocess_LightGBM_model.best_iteration)
-            preprocess_catBoost_prob = preprocess_catBoost_model.predict_proba(preprocess_tmp_X_test)[:, 1]
+            # preprocess_simpleNN_prob = preprocess_simpleNN_model(torch.FloatTensor(preprocess_tmp_X_test.values)).numpy()
+            # preprocess_XGB_prob = preprocess_XGB_model.predict_proba(preprocess_tmp_X_test)[:, 1]
+            # preprocess_LightGBM_prob = preprocess_LightGBM_model.predict(preprocess_tmp_X_test, num_iteration = preprocess_LightGBM_model.best_iteration)
+            # preprocess_catBoost_prob = preprocess_catBoost_model.predict_proba(preprocess_tmp_X_test)[:, 1]
 
             simpleNN_y_prob = simpleNN_model(torch.FloatTensor(tmp_X_test.values)).numpy()
             XGB_y_prob = XGB_model.predict_proba(tmp_X_test)[:, 1]
@@ -117,18 +119,18 @@ def main(RANDOM_SEED = 42):
                                     'XGB': XGB_y_prob,
                                     'LightGBM': LightGBM_y_prob,
                                     'catBoost': catBoost_y_prob,
-                                    'preprocess_NN': preprocess_simpleNN_prob[:, 0],
-                                    'preprocess_XGB':preprocess_XGB_prob,
-                                    'preprocess_LightGBM':preprocess_LightGBM_prob,
-                                    'preprocess_catBoost':preprocess_catBoost_prob
+                                    # 'preprocess_NN': preprocess_simpleNN_prob[:, 0],
+                                    # 'preprocess_XGB':preprocess_XGB_prob,
+                                    # 'preprocess_LightGBM':preprocess_LightGBM_prob,
+                                    # 'preprocess_catBoost':preprocess_catBoost_prob
                                     }).values)).numpy()
             auc = roc_auc_score(tmp_y_test, tmp_y_prob)
             print(f"{i} {auc}")
 
-            preprocess_simpleNN_prob = preprocess_simpleNN_model(torch.FloatTensor(preprocess_X_tests[i].values)).numpy()
-            preprocess_XGB_prob = preprocess_XGB_model.predict_proba(preprocess_X_tests[i])[:, 1]
-            preprocess_LightGBM_prob = preprocess_LightGBM_model.predict(preprocess_X_tests[i], num_iteration = preprocess_LightGBM_model.best_iteration)
-            preprocess_catBoost_prob = preprocess_catBoost_model.predict_proba(preprocess_X_tests[i])[:, 1]
+            # preprocess_simpleNN_prob = preprocess_simpleNN_model(torch.FloatTensor(preprocess_X_tests[i].values)).numpy()
+            # preprocess_XGB_prob = preprocess_XGB_model.predict_proba(preprocess_X_tests[i])[:, 1]
+            # preprocess_LightGBM_prob = preprocess_LightGBM_model.predict(preprocess_X_tests[i], num_iteration = preprocess_LightGBM_model.best_iteration)
+            # preprocess_catBoost_prob = preprocess_catBoost_model.predict_proba(preprocess_X_tests[i])[:, 1]
 
             simpleNN_y_prob = simpleNN_model(torch.FloatTensor(X_tests[i].values)).numpy()
             XGB_y_prob = XGB_model.predict_proba(X_tests[i])[:, 1]
@@ -140,27 +142,27 @@ def main(RANDOM_SEED = 42):
                                          'XGB': XGB_y_prob,
                                          'LightGBM': LightGBM_y_prob,
                                          'catBoost': catBoost_y_prob,
-                                         'preprocess_NN': preprocess_simpleNN_prob[:, 0],
-                                         'preprocess_XGB':preprocess_XGB_prob,
-                                         'preprocess_LightGBM':preprocess_LightGBM_prob,
-                                         'preprocess_catBoost':preprocess_catBoost_prob
+                                        #  'preprocess_NN': preprocess_simpleNN_prob[:, 0],
+                                        #  'preprocess_XGB':preprocess_XGB_prob,
+                                        #  'preprocess_LightGBM':preprocess_LightGBM_prob,
+                                        #  'preprocess_catBoost':preprocess_catBoost_prob
                                          }).values)).numpy()
         
         df = pd.DataFrame(y_predict_proba, columns=["y_predict_proba"])
         y_predicts.append(df)
 
-        del preprocess_LightGBM_model, preprocess_XGB_model, preprocess_simpleNN_model, preprocess_catBoost_model
+        # del preprocess_LightGBM_model, preprocess_XGB_model, preprocess_simpleNN_model, preprocess_catBoost_model
         del LightGBM_model, XGB_model, simpleNN_model, catBoost_model
         del merge_model
 
     file_handler.save_predict(y_predicts, dataset_names)
 
 # with preprocess of numeric and categoric features: 0.858455
-# without all preprocess: 0.872581(fix)
+# without all preprocess: 0.875(fix)
 # without preprocess of categoric features: 0.867
 # with preprocessed data and raw data: 0.861
 if __name__ == '__main__':
-    main(RANDOM_SEED = 100)
+    main(RANDOM_SEED = 200)
     quit()
 
 
