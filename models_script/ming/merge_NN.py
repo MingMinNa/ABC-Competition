@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,9 +12,11 @@ from tqdm import tqdm
 
 try:    
     from .utils import file_handler, data_preprocess
+    from .utils.data_preprocess import Numeric_Handler_Type, Categoric_Handler_Type
     from . import simple_NN, XGBoost, catBoost, lightGBM
 except: 
     from utils import file_handler, data_preprocess
+    from utils.data_preprocess import Numeric_Handler_Type, Categoric_Handler_Type
     import simple_NN, XGBoost, catBoost, lightGBM
 
 
@@ -34,7 +37,9 @@ def main(RANDOM_SEED = 42):
 
     # preprocess. But no preprocessing has the better result (?)
     # preprocess_X_trains, preprocess_y_trains, preprocess_X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests)
-
+    X_trains, y_trains, X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests, 
+                                                                  numeric_handler = Numeric_Handler_Type.No_preprocess,
+                                                                  categoric_handler = Categoric_Handler_Type.No_preprocess)
     torch.manual_seed(RANDOM_SEED)
 
     y_predicts = []
@@ -157,14 +162,16 @@ def main(RANDOM_SEED = 42):
 
     file_handler.save_predict(y_predicts, dataset_names)
 
-# with preprocess of numeric and categoric features: 0.858455
-# without all preprocess: 0.875(fix)
-# without preprocess of categoric features: 0.867
-# with preprocessed data and raw data: 0.861
+
+# (1) numeric(No_preprocess), categoric(No_preprocess):         0.875328
+# (2) numeric(No_preprocess), categoric(Normalization):         0.874448
+# (3) numeric(No_preprocess), categoric(One-Hot encoder):       0.871739
+# (4) numeric(Std), categoric(No_preprocess):                   0.869394
+# (5) numeric(Std), categoric(Normalization):                   0.868946
+# (6) numeric(Std), categoric(One-Hot encoder):                 0.86681
+# (7) numeric(Normalization), categoric(No_preprocess):         0.773912
+# (8) numeric(Normalization), categoric(Normalization):         0.773445
+# (9) numeric(Normalization), categoric(One-Hot encoder):       0.769017
 if __name__ == '__main__':
     main(RANDOM_SEED = 200)
     quit()
-
-
-    
-    
