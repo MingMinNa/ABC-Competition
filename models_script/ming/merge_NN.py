@@ -71,8 +71,12 @@ def main(RANDOM_SEED = 42):
         LightGBM_model = lightGBM.build_model(X_train = X_trains[i], y_train = y_trains[i], RANDOM_SEED = RANDOM_SEED)
         catBoost_model = catBoost.build_model(X_train = X_trains[i], y_train = y_trains[i], RANDOM_SEED = RANDOM_SEED)
 
+        
+        # split train data, use partial train data to train merged NN 
         tmp_X_train, tmp_X_test, tmp_y_train, tmp_y_test = train_test_split(\
             X_trains[i], y_trains[i], train_size = 0.8, random_state = RANDOM_SEED)
+        # use all train data 
+        # tmp_X_train, tmp_X_test, tmp_y_train, tmp_y_test = X_trains[i], X_trains[i], y_trains[i], y_trains[i]
         
         simpleNN_model.eval()
         with torch.no_grad():
@@ -162,7 +166,7 @@ def main(RANDOM_SEED = 42):
 
     file_handler.save_predict(y_predicts, dataset_names)
 
-
+# train merge NN with partial train data(other is test data)
 # (1) numeric(No_preprocess), categoric(No_preprocess):         0.875328
 # (2) numeric(No_preprocess), categoric(Normalization):         0.874448
 # (3) numeric(No_preprocess), categoric(One-Hot encoder):       0.871739
@@ -172,6 +176,9 @@ def main(RANDOM_SEED = 42):
 # (7) numeric(Normalization), categoric(No_preprocess):         0.773912
 # (8) numeric(Normalization), categoric(Normalization):         0.773445
 # (9) numeric(Normalization), categoric(One-Hot encoder):       0.769017
+
+# train merge NN with all train data(no split train data)
+# (10) numeric(No_preprocess), categoric(No_preprocess):        0.874301
 if __name__ == '__main__':
     main(RANDOM_SEED = 200)
     quit()
