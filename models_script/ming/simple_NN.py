@@ -9,8 +9,12 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 from tqdm import tqdm
 
-try:    from .utils import file_handler, data_preprocess
-except: from utils import file_handler, data_preprocess
+try:    
+    from .utils import file_handler, data_preprocess
+    from utils.data_preprocess import Numeric_Handler_Type, Categoric_Handler_Type
+except: 
+    from utils import file_handler, data_preprocess
+    from utils.data_preprocess import Numeric_Handler_Type, Categoric_Handler_Type
 
 class SimpleNN(nn.Module):
     def __init__(self, input_size):
@@ -35,33 +39,7 @@ def build_model(X_train, y_train, RANDOM_SEED = 42):
     
     X = X_train
     y = y_train
-    '''
-    # To observe the power of model
-    skf = StratifiedKFold(n_splits = 5, shuffle = True, random_state = RANDOM_SEED)
 
-    for train_index, test_index in skf.split(X, y):
-        tmp_X_train, tmp_X_test = X.iloc[train_index], X.iloc[test_index]
-        tmp_y_train, tmp_y_test = y.iloc[train_index], y.iloc[test_index]
-        train_tensor = TensorDataset(torch.FloatTensor(tmp_X_train.values), torch.FloatTensor(tmp_y_train.values))
-        train_loader = DataLoader(train_tensor, batch_size = 32, shuffle = True)
-        
-        input_size = X.shape[1]
-        model = SimpleNN(input_size)
-        
-        criterion = nn.BCELoss()
-        optimizer = optim.Adam(model.parameters(), lr = 0.001)
-        
-        # Train the model
-        model.train()
-        for epoch in range(50):  # You can adjust this based on your dataset
-            for inputs, labels in train_loader:
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs.squeeze(), labels.squeeze())
-                loss.backward()
-                optimizer.step()
-    '''
-    
     input_size = X.shape[1]
     model = SimpleNN(input_size)
     
@@ -70,7 +48,7 @@ def build_model(X_train, y_train, RANDOM_SEED = 42):
     train_tensor = TensorDataset(torch.FloatTensor(X.values), torch.FloatTensor(y.values))
     train_loader = DataLoader(train_tensor, batch_size = 32, shuffle = True)
     model.train()
-    for epoch in range(50):  # You can adjust this based on your dataset
+    for epoch in range(50): 
         for inputs, labels in train_loader:
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -80,13 +58,16 @@ def build_model(X_train, y_train, RANDOM_SEED = 42):
 
     return model
 
-# 0.843499(fix)
+# numeric(No_preprocess), categoric(No_preprocess):         0.843949 [Competition_data(simple).zip]
+# numeric(std), categoric(one-hot):                         0.843499 [Competition_data(simple_2).zip]
 def main(RANDOM_SEED = 42):
 
     # get dataset
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
 
-    X_trains, y_trains, X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests)
+    X_trains, y_trains, X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests,
+                                                                  numeric_handler = Numeric_Handler_Type.No_preprocess,
+                                                                  categoric_handler = Categoric_Handler_Type.No_preprocess)
 
     torch.manual_seed(RANDOM_SEED)
     y_predicts = []

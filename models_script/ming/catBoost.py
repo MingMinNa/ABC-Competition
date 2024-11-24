@@ -7,20 +7,26 @@ import pandas as pd
 from scipy.stats import randint, uniform
 from catboost import CatBoostClassifier
 
-try:    from .utils import file_handler, data_preprocess
-except: from utils import file_handler, data_preprocess
+try:    
+    from .utils import file_handler, data_preprocess
+    from .utils.data_preprocess import Numeric_Handler_Type, Categoric_Handler_Type
+except: 
+    from utils import file_handler, data_preprocess
+    from utils.data_preprocess import Numeric_Handler_Type, Categoric_Handler_Type
 
 
 def build_model(X_train, y_train, RANDOM_SEED = 42):
-    numeric_features, _ = data_preprocess.get_number_of_datatype(X_data = X_train)
+    
+    # numeric_features, _ = data_preprocess.get_number_of_datatype(X_data = X_train)
+    
+    base_model = CatBoostClassifier(
+        eval_metric="AUC",
+        random_seed=RANDOM_SEED,
+        verbose = 0,  
+        # cat_features = list(range(len(numeric_features), X_train.shape[1])),
+        iterations=100
+    )
 
-    # Too slow and the result is not better
-    # model = CatBoostClassifier(eval_metric = "AUC", random_seed = RANDOM_SEED, verbose=0, iterations=100,
-    #                             cat_features = list(range(len(numeric_features), X_train.shape[1])))
-
-    model = CatBoostClassifier(eval_metric = "AUC", random_seed = RANDOM_SEED, verbose=0, iterations=100)
-
-    # Define parameter distributions for RandomizedSearchCV
     param_distributions = {
         "depth": randint(3, 10),
         "learning_rate": uniform(0.01, 0.3),
@@ -29,34 +35,48 @@ def build_model(X_train, y_train, RANDOM_SEED = 42):
         "random_strength": uniform(0, 1),
     }
 
-    # Perform RandomizedSearchCV to find the best
     rand_search = RandomizedSearchCV(
-        model,
-        param_distributions,
-        n_iter = 100,
-        scoring = "roc_auc",
-        cv = StratifiedKFold(n_splits=3),
-        verbose = 1,
-        n_jobs = -1,
-        random_state = RANDOM_SEED,
+        estimator=base_model,
+        param_distributions=param_distributions,
+        n_iter=100,
+        scoring="roc_auc",
+        cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=RANDOM_SEED),
+        verbose=1,
+        n_jobs=-1,
+        random_state=RANDOM_SEED
     )
 
-    rand_search.fit(
-        X_train,
-        y_train,
-        early_stopping_rounds = 50,
-    )
-    print(f'[catBoost]最佳參數: {rand_search.best_params_}')
-    print(f'[catBoost]最佳交叉驗證分數: {rand_search.best_score_:.4f}')
-    return rand_search.best_estimator_
+    rand_search.fit(X_train, y_train, early_stopping_rounds=50)
+    
+    print(f'[CatBoost] 最佳參數: {rand_search.best_params_}')
+    print(f'[CatBoost] 最佳交叉驗證分數: {rand_search.best_score_:.4f}')
 
-# 0.858505(fix)
+    best_params = rand_search.best_params_
+    final_model = CatBoostClassifier(
+        eval_metric="AUC",
+        random_seed=RANDOM_SEED,
+        verbose=0,  
+        iterations=100,
+        **best_params  
+    )
+
+    final_model.fit(X_train, y_train)
+
+    return final_model
+
+# numeric(No_preprocess), categoric(No_preprocess):         0.866916 [Competition_data(catboost).zip]
+# numeric(std), categoric(one-hot):                         0.858284 [Competition_data(catboost_2).zip]
+
+# use "cat_features = list(range(len(numeric_features), X_train.shape[1]))" 
+# numeric(No_preprocess), categoric(No_preprocess):         0.857915 [Competition_data(catboost_cat).zip]
 def main(RANDOM_SEED = 42):
     # get dataset
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
 
-    X_trains, y_trains, X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests)
-    dataset_names = dataset_names[:1]
+    X_trains, y_trains, X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests,
+                                                                  numeric_handler = Numeric_Handler_Type.No_preprocess,
+                                                                  categoric_handler = Categoric_Handler_Type.No_preprocess)
+    
     y_predicts = []
     for i in tqdm(range(len(dataset_names))):
         model = build_model(X_train = X_trains[i], y_train = y_trains[i], RANDOM_SEED = RANDOM_SEED)

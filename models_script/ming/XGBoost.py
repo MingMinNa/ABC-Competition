@@ -5,17 +5,18 @@ from sklearn.model_selection import train_test_split
 from scipy.stats import randint, uniform
 import pandas as pd
 
-try:    from .utils import file_handler, data_preprocess
-except: from utils import file_handler, data_preprocess
+try:    
+    from .utils import file_handler, data_preprocess
+    from utils.data_preprocess import Numeric_Handler_Type, Categoric_Handler_Type
+except: 
+    from utils import file_handler, data_preprocess
+    from utils.data_preprocess import Numeric_Handler_Type, Categoric_Handler_Type
 
 
 def build_model(X_train, y_train, RANDOM_SEED = 42):
-
-    tmp_X_train, tmp_X_test, tmp_y_train, tmp_y_test = train_test_split(
-            X_train, y_train, train_size = 0.8, random_state = RANDOM_SEED)
     
     # Define XGBoost model with specified parameters
-    xgb_model = XGBClassifier(random_state = RANDOM_SEED, eval_metric = "logloss", tree_method = "hist", early_stopping_rounds = 10)
+    xgb_model = XGBClassifier(random_state = RANDOM_SEED, eval_metric = "logloss", tree_method = "hist")
 
     # Define parameter distributions for RandomizedSearchCV
     param_distributions = {
@@ -41,27 +42,34 @@ def build_model(X_train, y_train, RANDOM_SEED = 42):
         scoring = "roc_auc",
         cv = cross_val,
         n_jobs = -1,
-        verbose = 1,
+        verbose = 0,
         random_state = RANDOM_SEED
     )
+    randomized_search_cv.fit(X_train, y_train)
 
-    # Fit the model with training data
+    best_params = randomized_search_cv.best_params_
 
-    # test version: use the tmp_X_train to train the model
-    # randomized_search_cv.fit(tmp_X_train, tmp_X_y_train, eval_set=[(tmp_X_test, tmp_y_test)], verbose = False)
-    
-    # final version: use the whole X_train to train the model
-    randomized_search_cv.fit(X_train, y_train, eval_set=[(tmp_X_test, tmp_y_test)], verbose=False)
+    best_xgb_model = XGBClassifier(
+        random_state = RANDOM_SEED,
+        eval_metric = "logloss",
+        tree_method = "hist",
+        **best_params  # insert the best hyperparameters
+    )
 
-    best_xgb_model = randomized_search_cv.best_estimator_
+    # train model with all train data
+    best_xgb_model.fit(X_train, y_train)
+
     return best_xgb_model
 
-# 0.801861(fix)
+# numeric(No_preprocess), categoric(No_preprocess):         0.834567 [Competition_data(xgboost).zip]
+# numeric(std), categoric(one-hot):                         0.810903 [Competition_data(xgboost_2).zip]
 def main(RANDOM_SEED = 42):
     # get dataset
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
 
-    X_trains, y_trains, X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests)
+    X_trains, y_trains, X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests,
+                                                                  numeric_handler = Numeric_Handler_Type.No_preprocess,
+                                                                  categoric_handler = Categoric_Handler_Type.No_preprocess)
 
     y_predicts = []
     for i in tqdm(range(len(dataset_names))):

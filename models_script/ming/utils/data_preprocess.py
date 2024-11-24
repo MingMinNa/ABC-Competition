@@ -85,7 +85,7 @@ def preprocess_features(X_data, numeric_features, categoric_features, numeric_ha
     X_data = preprocess_categoric_data(X_data, categoric_features, X_data.loc[:, categoric_features], categoric_handler)
     return X_data
 
-def preprocess_data(dataset_names, X_trains, y_trains, X_tests, numeric_handler = None, categoric_handler = None):
+def preprocess_data(dataset_names, X_trains, y_trains, X_tests, numeric_handler = Numeric_Handler_Type.No_preprocess, categoric_handler = Categoric_Handler_Type.No_preprocess):
     
     copy_X_trains, copy_X_tests, copy_Y_trains = [], [], []
     # preprocess
