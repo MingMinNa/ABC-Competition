@@ -6,7 +6,7 @@ from enum import Enum
 
 class Numeric_Handler_Type(Enum):
     No_preprocess = 0
-    Standard_deviation = 1
+    Standardization = 1
     Normalization = 2
 class Categoric_Handler_Type(Enum):
     No_preprocess = 0
@@ -25,7 +25,7 @@ def get_number_of_datatype(X_data):
 def preprocess_numeric_data(numeric_data, numeric_handler):
 
     # standard deviation
-    if numeric_handler == Numeric_Handler_Type.Standard_deviation:
+    if numeric_handler == Numeric_Handler_Type.Standardization:
         imputer = SimpleImputer(strategy = "mean")
         imputed_numeric_data = imputer.fit_transform(numeric_data)
         

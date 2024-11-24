@@ -69,7 +69,7 @@ def main(RANDOM_SEED = 42):
     dataset_names, X_trains, y_trains, X_tests = file_handler.load_dataset()
 
     X_trains, y_trains, X_tests = data_preprocess.preprocess_data(dataset_names, X_trains, y_trains, X_tests,
-                                                                  numeric_handler = Numeric_Handler_Type.Standard_deviation,
+                                                                  numeric_handler = Numeric_Handler_Type.Standardization,
                                                                   categoric_handler = Categoric_Handler_Type.One_Hot_encoder)
 
     y_predicts = []

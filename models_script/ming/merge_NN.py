@@ -120,13 +120,13 @@ def main(RANDOM_SEED = 42):
 
 # (1) numeric(No_preprocess), categoric(No_preprocess):         0.870199
 # (2) numeric(No_preprocess), categoric(Normalization):         0.869414
-# (3) numeric(No_preprocess), categoric(One-Hot encoder):       0.866306
+# (3) numeric(No_preprocess), categoric(One-Hot):               0.866306
 # (4) numeric(Std), categoric(No_preprocess):                   0.865755
 # (5) numeric(Std), categoric(Normalization):                   0.865099
-# (6) numeric(Std), categoric(One-Hot encoder):                 0.861821
+# (6) numeric(Std), categoric(One-Hot):                         0.861821
 # (7) numeric(Normalization), categoric(No_preprocess):         0.771376
 # (8) numeric(Normalization), categoric(Normalization):         0.770122
-# (9) numeric(Normalization), categoric(One-Hot encoder):       0.764972
+# (9) numeric(Normalization), categoric(One-Hot):               0.764972
 if __name__ == '__main__':
     main(RANDOM_SEED = 200)
     quit()
