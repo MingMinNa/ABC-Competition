@@ -126,6 +126,30 @@ def plot_catboost_performance():
     plt.show()
     return
 
+def plot_model_performance_v2():
+# Data
+    methods = ['xgboost', 'catboost', 'ensemble(xgboost + catboost + lightGBM)']
+    scores = [0.838274, 0.836335, 0.861708]
+
+    # Plot
+    plt.figure(figsize=(14, 7))
+    plt.bar(methods, scores, color='skyblue')
+
+    # Add labels and title
+    plt.xticks()
+    plt.xlabel('Models', fontsize=12)
+    plt.ylabel('Performance (AUC)', fontsize=12)
+    plt.title('Performance for Different Models', fontsize=14)
+
+    # Display values on top of bars
+    for i, score in enumerate(scores):
+        plt.text(i, score + 0.002, f'{score:.4f}', ha='center', fontsize=10)
+
+    # Show plot
+    plt.ylim((0.6, 0.9))
+    plt.tight_layout()  # Adjust layout to avoid clipping
+    plt.show()
+    return
 
 def plot_percentage_of_workload():
 
@@ -147,24 +171,24 @@ def plot_percentage_of_workload():
         40, 
     ]
 
-    fig, ax = plt.subplots(figsize = (8, 8))
+    fig, ax = plt.subplots(figsize = (5, 5))
     wedges, texts, autotexts = ax.pie(programming, labels=teammates, autopct='%1.1f%%', startangle = 140, colors = plt.cm.Paired.colors)
 
     for text in texts:
         text.set_fontproperties(prop)
         text.set_fontsize(15)
 
-    ax.set_title('程式撰寫', fontproperties=prop, fontsize = 30)
+    ax.set_title('程式撰寫', fontproperties=prop, fontsize = 20)
 
 
-    fig2, ax2 = plt.subplots(figsize = (8, 8))
+    fig2, ax2 = plt.subplots(figsize = (5, 5))
     wedges, texts, autotexts = ax2.pie(report, labels=teammates[:len(report)], autopct='%1.1f%%', startangle = 140, colors = plt.cm.Paired.colors)
 
     for text in texts:
         text.set_fontproperties(prop)
         text.set_fontsize(15)
 
-    ax2.set_title('報告撰寫', fontproperties=prop, fontsize = 30)
+    ax2.set_title('報告撰寫', fontproperties=prop, fontsize = 20)
 
     plt.show()
 
@@ -174,4 +198,5 @@ if __name__ == '__main__':
     # plot_model_performance_with_annotations()
     # plot_ensemble_model_performance()
     # plot_catboost_performance()
-    plot_percentage_of_workload()
+    # plot_percentage_of_workload()
+    plot_model_performance_v2()

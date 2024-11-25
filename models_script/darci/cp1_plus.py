@@ -45,7 +45,7 @@ def preprocess_data(X_train, X_val, X_test):
 
     return X_train_processed, X_val_processed, X_test_processed
 
-
+# 0.838274
 def main():
     base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "Competition_data")
 
