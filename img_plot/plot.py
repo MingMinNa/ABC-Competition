@@ -4,6 +4,10 @@ import numpy as np
 import os
 from matplotlib import font_manager as fm
 
+
+font_path = os.path.join(os.path.dirname(__file__), 'KAIU.TTF')
+prop = fm.FontProperties(fname = font_path)
+
 def plot_model_performance_with_annotations():
     model_names = [
         'XGBoost',
@@ -153,9 +157,6 @@ def plot_model_performance_v2():
 
 def plot_percentage_of_workload():
 
-    font_path = os.path.join(os.path.dirname(__file__), 'KAIU.TTF')
-    prop = fm.FontProperties(fname = font_path)
-
     teammates = [
         '江曉明',
         '陳柏淮',
@@ -194,9 +195,35 @@ def plot_percentage_of_workload():
 
     return 
 
+def plot_private_public_AUC():
+    
+    methods = ['Public leaderboard', "Private leaderboard"]
+    scores = [0.870199, 0.854803]
+    ranks = [17, 19]
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.bar(methods, scores, color='skyblue')
+
+    # Add labels and title
+    plt.ylabel('AUC Score', fontsize=12)
+    plt.title('Comparison of AUC Score in two leaderboard', fontsize=20)
+
+
+    # Display values on top of bars
+    for i, score in enumerate(scores):
+        plt.text(i, score + 0.002, f'{score:.6f}\nRank:{ranks[i]}', ha='center', fontsize=10)
+
+    # Show plot
+    plt.ylim((0.8, 0.9))
+    plt.tight_layout()  # Adjust layout to avoid clipping
+    plt.show()
+    return
+
 if __name__ == '__main__':
     # plot_model_performance_with_annotations()
     # plot_ensemble_model_performance()
     # plot_catboost_performance()
     # plot_percentage_of_workload()
-    plot_model_performance_v2()
+    # plot_model_performance_v2()
+    plot_private_public_AUC()
